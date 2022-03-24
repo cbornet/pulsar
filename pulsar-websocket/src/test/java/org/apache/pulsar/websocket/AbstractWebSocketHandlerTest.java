@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.client.api.CompressionType;
+import org.apache.pulsar.client.api.ConsumerCryptoFailureAction;
 import org.apache.pulsar.client.api.HashingScheme;
 import org.apache.pulsar.client.api.MessageRoutingMode;
 import org.apache.pulsar.client.api.PulsarClient;
@@ -334,6 +335,8 @@ public class AbstractWebSocketHandlerTest {
             put("receiverQueueSize", "999");
             put("consumerName", "my-consumer");
             put("priorityLevel", "1");
+            put("negativeAckRedeliveryDelay", "2");
+            put("cryptoFailureAction", "DISCARD");
             put("maxRedeliverCount", "5");
         }}.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> new String[]{ entry.getValue() }));
 
@@ -361,9 +364,11 @@ public class AbstractWebSocketHandlerTest {
         assertEquals(conf.getReceiverQueueSize(), 999);
         assertEquals(conf.getConsumerName(), "my-consumer");
         assertEquals(conf.getPriorityLevel(), 1);
+        assertEquals(conf.getNegativeAckRedeliveryDelayMicros(), 2000);
         assertEquals(conf.getDeadLetterPolicy().getDeadLetterTopic(),
                 "persistent://my-property/my-ns/my-topic-my-subscription-DLQ");
         assertEquals(conf.getDeadLetterPolicy().getMaxRedeliverCount(), 5);
+        assertEquals(conf.getCryptoFailureAction(), ConsumerCryptoFailureAction.DISCARD);
 
         consumerHandler.clearQueryParams();
         consumerHandler.putQueryParam("receiverQueueSize", "1001");
