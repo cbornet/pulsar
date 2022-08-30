@@ -376,10 +376,10 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
 
         if (runtime == Runtime.PYTHON) {
             submitFunction(
-                    runtime, inputTopicName, outputTopicName, functionName, EXCEPTION_FUNCTION_PYTHON_FILE, EXCEPTION_PYTHON_CLASS, schema);
+                    runtime, inputTopicName, outputTopicName, functionName, EXCEPTION_FUNCTION_PYTHON_FILE, EXCEPTION_PYTHON_CLASS);
         } else {
             submitFunction(
-                    runtime, inputTopicName, outputTopicName, functionName, null, EXCEPTION_JAVA_CLASS, schema);
+                    runtime, inputTopicName, outputTopicName, functionName, null, EXCEPTION_JAVA_CLASS);
         }
 
         // get function info
@@ -530,14 +530,6 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
             return;
         }
 
-        Schema<?> schema;
-        if (Runtime.JAVA == runtime) {
-            schema = Schema.STRING;
-        } else {
-            schema = Schema.BYTES;
-        }
-
-
         String inputTopicName = "persistent://public/default/test-publish-" + runtime + "-input-" + randomName(8);
         String outputTopicName = "test-publish-" + runtime + "-output-" + randomName(8);
         try (PulsarAdmin admin = PulsarAdmin.builder().serviceHttpUrl(pulsarCluster.getHttpServiceUrl()).build()) {
@@ -558,7 +550,6 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                         functionName,
                         null,
                         PUBLISH_JAVA_CLASS,
-                        schema,
                         Collections.singletonMap("publish-topic", outputTopicName),
                         null, null, null);
                 break;
@@ -570,7 +561,6 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                         functionName,
                         PUBLISH_FUNCTION_PYTHON_FILE,
                         PUBLISH_PYTHON_CLASS,
-                        schema,
                         Collections.singletonMap("publish-topic", outputTopicName),
                         null, null, null);
                 break;
@@ -582,7 +572,6 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                         functionName,
                         PUBLISH_FUNCTION_GO_FILE,
                         null,
-                        schema,
                         Collections.singletonMap("publish-topic", outputTopicName),
                         null, null, null);
         }
@@ -699,7 +688,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
 
         // submit the exclamation function
         submitExclamationFunction(
-                runtime, inputTopicName, outputTopicName, functionName, pyZip, withExtraDeps, schema);
+                runtime, inputTopicName, outputTopicName, functionName, pyZip, withExtraDeps);
 
         // get function info
         getFunctionInfoSuccess(functionName);
@@ -744,8 +733,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                                            String outputTopicName,
                                            String functionName,
                                            boolean pyZip,
-                                           boolean withExtraDeps,
-                                           Schema<?> schema) throws Exception {
+                                           boolean withExtraDeps) throws Exception {
         submitFunction(
                 runtime,
                 inputTopicName,
@@ -754,8 +742,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                 pyZip,
                 withExtraDeps,
                 false,
-                getExclamationClass(runtime, pyZip, withExtraDeps),
-                schema);
+                getExclamationClass(runtime, pyZip, withExtraDeps));
     }
 
     private <T> void submitFunction(Runtime runtime,
@@ -765,8 +752,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                                     boolean pyZip,
                                     boolean withExtraDeps,
                                     boolean isPublishFunction,
-                                    String functionClass,
-                                    Schema<T> inputTopicSchema) throws Exception {
+                                    String functionClass) throws Exception {
 
         String file = null;
         if (Runtime.JAVA == runtime) {
@@ -783,7 +769,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
             }
         }
 
-        submitFunction(runtime, inputTopicName, outputTopicName, functionName, file, functionClass, inputTopicSchema);
+        submitFunction(runtime, inputTopicName, outputTopicName, functionName, file, functionClass);
     }
 
     private <T> void submitFunction(Runtime runtime,
@@ -791,10 +777,9 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                                     String outputTopicName,
                                     String functionName,
                                     String functionFile,
-                                    String functionClass,
-                                    Schema<T> inputTopicSchema) throws Exception {
+                                    String functionClass) throws Exception {
         submitFunction(runtime, inputTopicName, outputTopicName, functionName, functionFile, functionClass,
-                inputTopicSchema, null, null, null, null);
+                null, null, null, null);
     }
 
     private <T> void submitFunction(Runtime runtime,
@@ -803,7 +788,6 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                                     String functionName,
                                     String functionFile,
                                     String functionClass,
-                                    Schema<T> inputTopicSchema,
                                     Map<String, String> userConfigs,
                                     String customSchemaInputs,
                                     String outputSchemaType,
@@ -857,7 +841,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
 
         if (StringUtils.isNotEmpty(inputTopicName)) {
             ensureSubscriptionCreated(
-                    inputTopicName, String.format("public/default/%s", functionName), inputTopicSchema);
+                    inputTopicName, String.format("public/default/%s", functionName));
         }
     }
 
@@ -922,8 +906,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
 
     @SuppressWarnings("try")
     private <T> void ensureSubscriptionCreated(String inputTopicName,
-                                               String subscriptionName,
-                                               Schema<T> inputTopicSchema)
+                                               String subscriptionName)
             throws Exception {
         // ensure the function subscription exists before we start producing messages
         try (PulsarAdmin admin = getPulsarAdmin()) {
@@ -1272,8 +1255,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                 false,
                 false,
                 false,
-                AutoSchemaFunction.class.getName(),
-                Schema.AVRO(CustomObject.class));
+                AutoSchemaFunction.class.getName());
 
         // get function info
         getFunctionInfoSuccess(functionName);
@@ -1377,8 +1359,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                 outputTopic,
                 functionName,
                 null,
-                AvroSchemaTestFunction.class.getName(),
-                Schema.AVRO(AvroTestObject.class));
+                AvroSchemaTestFunction.class.getName());
         log.info("pulsar submitFunction");
 
         getFunctionInfoSuccess(functionName);
@@ -1452,7 +1433,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
         final int numMessages = 10;
 
         // submit the exclamation function
-        submitFunction(runtime, inputTopicName, outputTopicName, functionName, null, InitializableFunction.class.getName(), schema,
+        submitFunction(runtime, inputTopicName, outputTopicName, functionName, null, InitializableFunction.class.getName(),
                 Collections.singletonMap("publish-topic", outputTopicName), null, null, null);
 
         // publish and consume result
@@ -1473,14 +1454,6 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
             return;
         }
 
-
-        Schema<?> schema;
-        if (Runtime.JAVA == runtime) {
-            schema = Schema.STRING;
-        } else {
-            schema = Schema.BYTES;
-        }
-
         String inputTopicName = "persistent://public/default/test-log-" + runtime + "-input-" + randomName(8);
         String logTopicName = "test-log-" + runtime + "-log-topic-" + randomName(8);
         try (PulsarAdmin admin = PulsarAdmin.builder().serviceHttpUrl(pulsarCluster.getHttpServiceUrl()).build()) {
@@ -1493,7 +1466,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
 
         // submit the exclamation function
         submitJavaLoggingFunction(
-                inputTopicName, logTopicName, functionName, schema);
+                inputTopicName, logTopicName, functionName);
 
         // get function info
         getFunctionInfoSuccess(functionName);
@@ -1529,8 +1502,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
 
     private void submitJavaLoggingFunction(String inputTopicName,
                                            String logTopicName,
-                                           String functionName,
-                                           Schema<?> schema) throws Exception {
+                                           String functionName) throws Exception {
         CommandGenerator generator;
         log.info("------- INPUT TOPIC: '{}'", inputTopicName);
         if (inputTopicName.endsWith(".*")) {
@@ -1552,7 +1524,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                 commands);
         assertTrue(result.getStdout().contains("Created successfully"));
 
-        ensureSubscriptionCreated(inputTopicName, String.format("public/default/%s", functionName), schema);
+        ensureSubscriptionCreated(inputTopicName, String.format("public/default/%s", functionName));
     }
 
     private void publishAndConsumeMessages(String inputTopic,
@@ -1637,7 +1609,6 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                 functionName,
                 null,
                 function,
-                Schema.AUTO_CONSUME(),
                 null,
                 null,
                 SchemaType.NONE.name(),
@@ -1755,8 +1726,7 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                 outputTopic,
                 functionName,
                 null,
-                RecordFunction.class.getName(),
-                Schema.AUTO_CONSUME());
+                RecordFunction.class.getName());
         try {
             @Cleanup
             Producer<String> producer = pulsarClient
@@ -1822,7 +1792,6 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                 functionName,
                 null,
                 MergeTopicFunction.class.getName(),
-                null,
                 null,
                 inputSpecNode.toString(),
                 SchemaType.AUTO_PUBLISH.name().toUpperCase(),
