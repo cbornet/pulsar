@@ -926,15 +926,10 @@ public abstract class PulsarFunctionsTest extends PulsarFunctionsTestBase {
                                                Schema<T> inputTopicSchema)
             throws Exception {
         // ensure the function subscription exists before we start producing messages
-        try (PulsarClient client = PulsarClient.builder()
-                .serviceUrl(pulsarCluster.getPlainTextServiceUrl())
-                .build()) {
-            try (Consumer<T> ignored = client.newConsumer(inputTopicSchema)
-                    .topic(inputTopicName)
-                    .subscriptionType(SubscriptionType.Shared)
-                    .subscriptionName(subscriptionName)
-                    .subscribe()) {
-            }
+        try (PulsarAdmin admin = getPulsarAdmin()) {
+            admin.topics().createSubscription(inputTopicName, subscriptionName, MessageId.earliest);
+        } catch (PulsarAdminException.ConflictException e) {
+            // expected
         }
     }
 
