@@ -20,7 +20,6 @@ package org.apache.pulsar.io.kafka.source;
 
 
 import com.google.common.collect.ImmutableMap;
-import java.util.Collection;
 import java.util.Collections;
 import java.lang.reflect.Field;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -57,18 +56,17 @@ public class KafkaAbstractSourceTest {
     private static class DummySource extends KafkaAbstractSource<String> {
 
         @Override
-        public KafkaRecord buildRecord(ConsumerRecord<Object, Object> consumerRecord) {
-            KafkaRecord record = new KafkaRecord(consumerRecord,
+        public KafkaRecord<String> buildRecord(ConsumerRecord<Object, Object> consumerRecord) {
+            return new KafkaRecord<>(consumerRecord,
                     new String((byte[]) consumerRecord.value(), StandardCharsets.UTF_8),
                     Schema.STRING,
                     Collections.emptyMap());
-            return record;
         }
     }
 
     @Test
     public void testInvalidConfigWillThrownException() throws Exception {
-        KafkaAbstractSource source = new DummySource();
+        KafkaAbstractSource<String> source = new DummySource();
         SourceContext ctx = mock(SourceContext.class);
         Map<String, Object> config = new HashMap<>();
         Assert.ThrowingRunnable openAndClose = ()->{
@@ -160,10 +158,10 @@ public class KafkaAbstractSourceTest {
 
     @Test
     public final void closeConnectorWhenUnexpectedExceptionThrownTest() throws Exception {
-        KafkaAbstractSource source = new DummySource();
-        Consumer consumer = mock(Consumer.class);
+        KafkaAbstractSource<String> source = new DummySource();
+        Consumer<Object, Object> consumer = mock(Consumer.class);
         Mockito.doThrow(new RuntimeException("Uncaught exception")).when(consumer)
-                .subscribe(Mockito.any(Collection.class));
+                .subscribe(Mockito.anyCollection());
 
         Field consumerField = KafkaAbstractSource.class.getDeclaredField("consumer");
         consumerField.setAccessible(true);
